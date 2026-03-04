@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, Modal,
   TextInput, ScrollView, Alert, StyleSheet, Animated,
+  KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -105,20 +106,15 @@ const SalesScreen = ({ navigation }) => {
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.produitNom} numberOfLines={2}>{item.nom}</Text>
-          <Text style={styles.produitPrix}>{formatMontant(item.prix)}</Text>
-          <Text style={[styles.produitStock, {
-            color: stockFaible ? COLORS.error : COLORS.textSecondary
-          }]}>
+          <Text style={styles.produitPrix}>{formatMontant(item.prixVente || item.prix)}</Text>
+          <Text style={[styles.produitStock, { color: stockFaible ? COLORS.error : COLORS.textSecondary }]}>
             {item.stock} en stock
           </Text>
         </View>
         <View style={styles.qteControls}>
           {qteInPanier > 0 && (
             <>
-              <TouchableOpacity
-                onPress={() => retirerDuPanier(item.id)}
-                style={styles.qteBtn}
-              >
+              <TouchableOpacity onPress={() => retirerDuPanier(item.id)} style={styles.qteBtn}>
                 <Ionicons name="remove" size={18} color={COLORS.primary} />
               </TouchableOpacity>
               <Text style={styles.qteTexte}>{qteInPanier}</Text>
@@ -145,7 +141,6 @@ const SalesScreen = ({ navigation }) => {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-
       {/* EN-TÊTE */}
       <View style={styles.entete}>
         <View>
@@ -154,11 +149,7 @@ const SalesScreen = ({ navigation }) => {
             {produits.filter(p => p.stock > 0).length} produits disponibles
           </Text>
         </View>
-        <TouchableOpacity
-          onPress={() => setModalPanier(true)}
-          style={styles.boutonPanier}
-          activeOpacity={0.85}
-        >
+        <TouchableOpacity onPress={() => setModalPanier(true)} style={styles.boutonPanier} activeOpacity={0.85}>
           <Animated.View style={{ transform: [{ scale: panierAnimation }] }}>
             <Ionicons name="cart" size={24} color={COLORS.white} />
           </Animated.View>
@@ -192,19 +183,14 @@ const SalesScreen = ({ navigation }) => {
         data={produitsFiltres}
         keyExtractor={(item) => item.id}
         renderItem={renderProduit}
-        contentContainerStyle={{
-          padding: SPACING.lg,
-          gap: SPACING.sm,
-          paddingBottom: 120,
-        }}
+        contentContainerStyle={{ padding: SPACING.lg, gap: SPACING.sm, paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
           <View style={styles.vide}>
             <Ionicons name="cube-outline" size={64} color={COLORS.textLight} />
             <Text style={styles.videTexte}>Aucun produit disponible</Text>
-            <Text style={styles.videDesc}>
-              Ajoutez des produits dans l'onglet Produits
-            </Text>
+            <Text style={styles.videDesc}>Ajoutez des produits dans Mon Stock</Text>
           </View>
         }
       />
@@ -213,16 +199,10 @@ const SalesScreen = ({ navigation }) => {
       {nombreArticles > 0 && (
         <View style={[styles.totalBar, { paddingBottom: insets.bottom + SPACING.md }]}>
           <View>
-            <Text style={styles.totalBarLabel}>
-              {nombreArticles} article{nombreArticles > 1 ? 's' : ''}
-            </Text>
+            <Text style={styles.totalBarLabel}>{nombreArticles} article{nombreArticles > 1 ? 's' : ''}</Text>
             <Text style={styles.totalBarMontant}>{formatMontant(total)}</Text>
           </View>
-          <TouchableOpacity
-            style={styles.boutonValider}
-            onPress={() => setModalPanier(true)}
-            activeOpacity={0.9}
-          >
+          <TouchableOpacity style={styles.boutonValider} onPress={() => setModalPanier(true)} activeOpacity={0.9}>
             <Text style={styles.boutonValiderTexte}>Voir panier</Text>
             <Ionicons name="arrow-forward" size={18} color={COLORS.white} />
           </TouchableOpacity>
@@ -231,7 +211,11 @@ const SalesScreen = ({ navigation }) => {
 
       {/* MODAL PANIER */}
       <Modal visible={modalPanier} animationType="slide" presentationStyle="pageSheet">
-        <View style={{ flex: 1, backgroundColor: COLORS.background }}>
+        <KeyboardAvoidingView
+          style={{ flex: 1, backgroundColor: COLORS.background }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
+        >
           <View style={styles.modalEntete}>
             <Text style={styles.modalTitre}>Mon Panier</Text>
             <TouchableOpacity onPress={() => setModalPanier(false)}>
@@ -243,35 +227,30 @@ const SalesScreen = ({ navigation }) => {
             <View style={styles.vide}>
               <Ionicons name="cart-outline" size={64} color={COLORS.textLight} />
               <Text style={styles.videTexte}>Panier vide</Text>
+              <Text style={styles.videDesc}>Ajoutez des produits depuis la liste</Text>
             </View>
           ) : (
             <>
               <ScrollView
                 style={{ flex: 1 }}
-                contentContainerStyle={{ padding: SPACING.lg, gap: SPACING.sm }}
+                contentContainerStyle={{ padding: SPACING.lg, gap: SPACING.sm, paddingBottom: SPACING.xl }}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
               >
                 {panier.map((item) => (
                   <View key={item.id} style={styles.panierItem}>
-                    <Text style={styles.panierItemNom} numberOfLines={1}>
-                      {item.nom}
-                    </Text>
+                    <Text style={styles.panierItemNom} numberOfLines={1}>{item.nom}</Text>
                     <View style={styles.panierItemControls}>
-                      <TouchableOpacity
-                        onPress={() => retirerDuPanier(item.id)}
-                        style={styles.ctrlBtn}
-                      >
+                      <TouchableOpacity onPress={() => retirerDuPanier(item.id)} style={styles.ctrlBtn}>
                         <Ionicons name="remove" size={16} color={COLORS.primary} />
                       </TouchableOpacity>
                       <Text style={styles.panierItemQte}>{item.quantite}</Text>
-                      <TouchableOpacity
-                        onPress={() => ajouterAuPanier(item)}
-                        style={styles.ctrlBtn}
-                      >
+                      <TouchableOpacity onPress={() => ajouterAuPanier(item)} style={styles.ctrlBtn}>
                         <Ionicons name="add" size={16} color={COLORS.primary} />
                       </TouchableOpacity>
                     </View>
                     <Text style={styles.panierItemSousTotal}>
-                      {formatMontant(item.prix * item.quantite)}
+                      {formatMontant((item.prixVente || item.prix) * item.quantite)}
                     </Text>
                     <TouchableOpacity onPress={() => supprimerDuPanier(item.id)}>
                       <Ionicons name="trash-outline" size={18} color={COLORS.error} />
@@ -285,12 +264,13 @@ const SalesScreen = ({ navigation }) => {
                   value={nomClient}
                   onChangeText={setNomClient}
                   placeholderTextColor={COLORS.textLight}
+                  returnKeyType="done"
                 />
               </ScrollView>
 
               <View style={[styles.panierFooter, { paddingBottom: insets.bottom + SPACING.md }]}>
                 <View style={styles.panierTotal}>
-                  <Text style={styles.panierTotalLabel}>TOTAL</Text>
+                  <Text style={styles.panierTotalLabel}>TOTAL À PAYER</Text>
                   <Text style={styles.panierTotalMontant}>{formatMontant(total)}</Text>
                 </View>
                 <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
@@ -313,33 +293,39 @@ const SalesScreen = ({ navigation }) => {
               </View>
             </>
           )}
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* MODAL PAIEMENT */}
       <Modal visible={modalPaiement} animationType="slide" presentationStyle="pageSheet">
         <ScrollView
           style={{ flex: 1, backgroundColor: COLORS.background }}
-          contentContainerStyle={{ padding: SPACING.xl, paddingTop: SPACING.xxxl }}
+          contentContainerStyle={{ padding: SPACING.xl, paddingTop: SPACING.xxxl, paddingBottom: 60 }}
+          keyboardShouldPersistTaps="handled"
         >
           <View style={styles.modalEntete}>
-            <Text style={styles.modalTitre}>Mode de paiement</Text>
+            <Text style={styles.modalTitre}>Paiement</Text>
             <TouchableOpacity onPress={() => { setModalPaiement(false); setModalPanier(true); }}>
               <Ionicons name="arrow-back" size={26} color={COLORS.text} />
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.totalRecap}>
-            Total : <Text style={{ color: COLORS.primary }}>{formatMontant(total)}</Text>
-          </Text>
+          <View style={styles.totalRecapCarte}>
+            <Text style={styles.totalRecapLabel}>Total à encaisser</Text>
+            <Text style={styles.totalRecapMontant}>{formatMontant(total)}</Text>
+            <Text style={styles.totalRecapArticles}>
+              {nombreArticles} article{nombreArticles > 1 ? 's' : ''}
+            </Text>
+          </View>
 
+          <Text style={styles.sectionLabel}>Comment le client paye ?</Text>
           <View style={{ gap: SPACING.sm, marginBottom: SPACING.xl }}>
             {MODES.map(({ mode, label, desc, couleur, icone }) => (
               <TouchableOpacity
                 key={mode}
                 style={[
                   styles.modePaiementOption,
-                  modePaiement === mode && { borderColor: couleur, borderWidth: 2 },
+                  modePaiement === mode && { borderColor: couleur, borderWidth: 2, backgroundColor: `${couleur}05` },
                 ]}
                 onPress={() => setModePaiement(mode)}
                 activeOpacity={0.8}
@@ -348,28 +334,47 @@ const SalesScreen = ({ navigation }) => {
                   <Ionicons name={icone} size={28} color={couleur} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.modeLabel, modePaiement === mode && { color: couleur }]}>
-                    {label}
-                  </Text>
+                  <Text style={[styles.modeLabel, modePaiement === mode && { color: couleur }]}>{label}</Text>
                   <Text style={styles.modeDesc}>{desc}</Text>
                 </View>
                 {modePaiement === mode && (
-                  <Ionicons name="checkmark-circle" size={24} color={couleur} />
+                  <Ionicons name="checkmark-circle" size={26} color={couleur} />
                 )}
               </TouchableOpacity>
             ))}
           </View>
 
+          <View style={styles.recapPaiement}>
+            <Ionicons
+              name={modePaiement === 'especes' ? 'cash-outline' : 'phone-portrait-outline'}
+              size={20}
+              color={modePaiement === 'especes' ? COLORS.success : COLORS.nita}
+            />
+            <Text style={styles.recapPaiementTexte}>
+              {modePaiement === 'especes' ? 'Paiement en espèces' : 'Paiement mobile'}
+            </Text>
+            <Text style={styles.recapPaiementMontant}>{formatMontant(total)}</Text>
+          </View>
+
           <TouchableOpacity
-            style={[styles.boutonConfirmer, paiementEnCours && { opacity: 0.7 }]}
+            style={[styles.boutonEnregistrer, paiementEnCours && { opacity: 0.7 }]}
             onPress={validerPaiement}
             disabled={paiementEnCours}
             activeOpacity={0.9}
           >
-            <Ionicons name="checkmark-circle-outline" size={22} color={COLORS.white} />
-            <Text style={styles.boutonConfirmerTexte}>
-              {paiementEnCours ? 'Traitement...' : 'Confirmer la vente'}
+            <Ionicons name="save-outline" size={24} color={COLORS.white} />
+            <Text style={styles.boutonEnregistrerTexte}>
+              {paiementEnCours ? 'Enregistrement...' : 'Enregistrer la vente'}
             </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.boutonAnnuler}
+            onPress={() => { setModalPaiement(false); setModalPanier(true); }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="arrow-back-outline" size={18} color={COLORS.textSecondary} />
+            <Text style={styles.boutonAnnulerTexte}>Retour au panier</Text>
           </TouchableOpacity>
         </ScrollView>
       </Modal>
@@ -415,7 +420,7 @@ const styles = StyleSheet.create({
   ctrlBtn: { width: 30, height: 30, borderRadius: 15, backgroundColor: `${COLORS.primary}15`, alignItems: 'center', justifyContent: 'center' },
   panierItemQte: { fontSize: FONTS.sizes.md, fontWeight: '800', color: COLORS.text, minWidth: 20, textAlign: 'center' },
   panierItemSousTotal: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.primary },
-  champClient: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md, paddingHorizontal: SPACING.md, height: 50, fontSize: FONTS.sizes.md, color: COLORS.text, backgroundColor: COLORS.surface, marginTop: SPACING.sm },
+  champClient: { borderWidth: 1.5, borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md, paddingHorizontal: SPACING.md, height: 52, fontSize: FONTS.sizes.md, color: COLORS.text, backgroundColor: COLORS.surface, marginTop: SPACING.sm },
   panierFooter: { padding: SPACING.lg, borderTopWidth: 1, borderTopColor: COLORS.border, backgroundColor: COLORS.surface },
   panierTotal: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.md },
   panierTotalLabel: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 1 },
@@ -423,13 +428,22 @@ const styles = StyleSheet.create({
   boutonVider: { height: 52, paddingHorizontal: SPACING.lg, borderRadius: BORDER_RADIUS.md, borderWidth: 2, borderColor: COLORS.error, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: SPACING.sm },
   boutonPayer: { height: 52, backgroundColor: COLORS.secondary, borderRadius: BORDER_RADIUS.md, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: SPACING.sm },
   boutonPayerTexte: { color: COLORS.white, fontSize: FONTS.sizes.md, fontWeight: '700' },
-  totalRecap: { fontSize: FONTS.sizes.xl, fontWeight: '700', color: COLORS.text, marginBottom: SPACING.xl },
+  totalRecapCarte: { backgroundColor: COLORS.primary, borderRadius: BORDER_RADIUS.xl, padding: SPACING.xl, alignItems: 'center', marginBottom: SPACING.xl, ...SHADOWS.medium },
+  totalRecapLabel: { fontSize: FONTS.sizes.sm, color: `${COLORS.white}CC`, fontWeight: '600', marginBottom: SPACING.sm },
+  totalRecapMontant: { fontSize: 42, fontWeight: '900', color: COLORS.white, marginBottom: 4 },
+  totalRecapArticles: { fontSize: FONTS.sizes.sm, color: `${COLORS.white}CC` },
+  sectionLabel: { fontSize: FONTS.sizes.sm, fontWeight: '700', color: COLORS.textSecondary, marginBottom: SPACING.md, textTransform: 'uppercase', letterSpacing: 0.8 },
   modePaiementOption: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: BORDER_RADIUS.lg, padding: SPACING.md, borderWidth: 1.5, borderColor: COLORS.border, ...SHADOWS.small, gap: SPACING.md },
   modeLogo: { width: 56, height: 56, borderRadius: BORDER_RADIUS.md, alignItems: 'center', justifyContent: 'center' },
   modeLabel: { fontSize: FONTS.sizes.lg, fontWeight: '700', color: COLORS.text },
   modeDesc: { fontSize: FONTS.sizes.sm, color: COLORS.textSecondary, marginTop: 2 },
-  boutonConfirmer: { backgroundColor: COLORS.primary, borderRadius: BORDER_RADIUS.md, height: 58, alignItems: 'center', justifyContent: 'center', ...SHADOWS.medium, flexDirection: 'row', gap: SPACING.sm },
-  boutonConfirmerTexte: { color: COLORS.white, fontSize: FONTS.sizes.lg, fontWeight: '700' },
+  recapPaiement: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, backgroundColor: COLORS.surface, padding: SPACING.md, borderRadius: BORDER_RADIUS.md, borderWidth: 1, borderColor: COLORS.border, marginBottom: SPACING.md },
+  recapPaiementTexte: { flex: 1, fontSize: FONTS.sizes.md, fontWeight: '600', color: COLORS.text },
+  recapPaiementMontant: { fontSize: FONTS.sizes.md, fontWeight: '800', color: COLORS.primary },
+  boutonEnregistrer: { backgroundColor: COLORS.success, borderRadius: BORDER_RADIUS.md, height: 60, alignItems: 'center', justifyContent: 'center', ...SHADOWS.medium, flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.md },
+  boutonEnregistrerTexte: { color: COLORS.white, fontSize: FONTS.sizes.lg, fontWeight: '800' },
+  boutonAnnuler: { height: 48, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: SPACING.sm },
+  boutonAnnulerTexte: { color: COLORS.textSecondary, fontSize: FONTS.sizes.md, fontWeight: '600' },
 });
 
 export default SalesScreen;

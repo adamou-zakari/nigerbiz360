@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, FlatList, TouchableOpacity,
-  Modal, Alert, StyleSheet, ScrollView,
+  Modal, Alert, StyleSheet, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -57,7 +57,7 @@ const ProductsScreen = () => {
     const e = {};
     if (!form.nom.trim()) e.nom = 'Nom requis';
     if (!form.prixVente || isNaN(form.prixVente) || Number(form.prixVente) <= 0) e.prixVente = 'Prix de vente invalide';
-    if (form.prixAchat && (isNaN(form.prixAchat) || Number(form.prixAchat) < 0)) e.prixAchat = 'Prix d\'achat invalide';
+    if (form.prixAchat && (isNaN(form.prixAchat) || Number(form.prixAchat) < 0)) e.prixAchat = "Prix d'achat invalide";
     if (form.prixAchat && Number(form.prixAchat) >= Number(form.prixVente)) e.prixAchat = 'Doit être inférieur au prix de vente';
     if (!form.stock || isNaN(form.stock) || Number(form.stock) < 0) e.stock = 'Stock invalide';
     setErreurs(e);
@@ -139,17 +139,9 @@ const ProductsScreen = () => {
               </View>
             )}
           </View>
-          <View style={[styles.stockBadge, {
-            backgroundColor: faible ? `${COLORS.error}15` : `${COLORS.success}15`
-          }]}>
-            <Ionicons
-              name={faible ? 'warning-outline' : 'cube-outline'}
-              size={12}
-              color={faible ? COLORS.error : COLORS.success}
-            />
-            <Text style={[styles.stockTexte, {
-              color: faible ? COLORS.error : COLORS.success
-            }]}>
+          <View style={[styles.stockBadge, { backgroundColor: faible ? `${COLORS.error}15` : `${COLORS.success}15` }]}>
+            <Ionicons name={faible ? 'warning-outline' : 'cube-outline'} size={12} color={faible ? COLORS.error : COLORS.success} />
+            <Text style={[styles.stockTexte, { color: faible ? COLORS.error : COLORS.success }]}>
               {item.stock} en stock
             </Text>
           </View>
@@ -158,16 +150,10 @@ const ProductsScreen = () => {
           <TouchableOpacity onPress={() => ouvrirModal(item)} style={styles.actionBtn}>
             <Ionicons name="pencil-outline" size={16} color={COLORS.primary} />
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => ouvrirReappro(item)}
-            style={[styles.actionBtn, { backgroundColor: `${COLORS.success}10` }]}
-          >
+          <TouchableOpacity onPress={() => ouvrirReappro(item)} style={[styles.actionBtn, { backgroundColor: `${COLORS.success}10` }]}>
             <Ionicons name="add-circle-outline" size={16} color={COLORS.success} />
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => confirmerSuppression(item)}
-            style={[styles.actionBtn, { backgroundColor: `${COLORS.error}10` }]}
-          >
+          <TouchableOpacity onPress={() => confirmerSuppression(item)} style={[styles.actionBtn, { backgroundColor: `${COLORS.error}10` }]}>
             <Ionicons name="trash-outline" size={16} color={COLORS.error} />
           </TouchableOpacity>
         </View>
@@ -177,7 +163,6 @@ const ProductsScreen = () => {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* EN-TÊTE */}
       <View style={styles.entete}>
         <View>
           <Text style={styles.titrePage}>Mon Stock</Text>
@@ -188,7 +173,6 @@ const ProductsScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {/* RECHERCHE */}
       <View style={styles.searchBar}>
         <Ionicons name="search-outline" size={18} color={COLORS.textSecondary} />
         <TextInput
@@ -205,12 +189,12 @@ const ProductsScreen = () => {
         ) : null}
       </View>
 
-      {/* LISTE */}
       <FlatList
         data={produitsFiltres}
         keyExtractor={(item) => item.id}
         renderItem={renderProduit}
         contentContainerStyle={{ padding: SPACING.lg, gap: SPACING.sm, paddingBottom: 100 }}
+        keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
           <View style={styles.vide}>
             <Ionicons name="cube-outline" size={64} color={COLORS.textLight} />
@@ -227,141 +211,162 @@ const ProductsScreen = () => {
 
       {/* MODAL AJOUTER / MODIFIER */}
       <Modal visible={modalVisible} animationType="slide" presentationStyle="pageSheet">
-        <ScrollView
+        <KeyboardAvoidingView
           style={{ flex: 1, backgroundColor: COLORS.background }}
-          contentContainerStyle={{ padding: SPACING.xl, paddingTop: SPACING.xxxl, gap: SPACING.md }}
-          keyboardShouldPersistTaps="handled"
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
         >
-          <View style={styles.modalEntete}>
-            <Text style={styles.modalTitre}>
-              {produitEdit ? 'Modifier le produit' : 'Nouveau produit'}
-            </Text>
-            <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Ionicons name="close" size={28} color={COLORS.text} />
-            </TouchableOpacity>
-          </View>
-
-          <ChampModal
-            label="Nom du produit"
-            placeholder="Ex: Riz basmati 5kg"
-            icone="cube-outline"
-            value={form.nom}
-            onChangeText={(v) => setForm({ ...form, nom: v })}
-            erreur={erreurs.nom}
-          />
-          <ChampModal
-            label="Prix d'achat (FCFA) — optionnel"
-            placeholder="Ex: 8000 — ce que vous avez payé"
-            icone="arrow-down-circle-outline"
-            value={form.prixAchat}
-            onChangeText={(v) => setForm({ ...form, prixAchat: v })}
-            keyboardType="numeric"
-            erreur={erreurs.prixAchat}
-          />
-          <ChampModal
-            label="Prix de vente (FCFA)"
-            placeholder="Ex: 10000 — ce que le client paye"
-            icone="arrow-up-circle-outline"
-            value={form.prixVente}
-            onChangeText={(v) => setForm({ ...form, prixVente: v })}
-            keyboardType="numeric"
-            erreur={erreurs.prixVente}
-          />
-
-          {form.prixAchat && form.prixVente && Number(form.prixVente) > Number(form.prixAchat) && (
-            <View style={styles.beneficeApercu}>
-              <Ionicons name="trending-up-outline" size={20} color={COLORS.success} />
-              <Text style={styles.beneficeApercuTexte}>
-                Bénéfice par unité : {formatMontant(Number(form.prixVente) - Number(form.prixAchat))}
-              </Text>
-            </View>
-          )}
-
-          <ChampModal
-            label="Quantité en stock"
-            placeholder="Ex: 50"
-            icone="layers-outline"
-            value={form.stock}
-            onChangeText={(v) => setForm({ ...form, stock: v })}
-            keyboardType="numeric"
-            erreur={erreurs.stock}
-          />
-
-          <TouchableOpacity
-            style={[styles.boutonSauvegarder, loading && { opacity: 0.7 }]}
-            onPress={sauvegarder}
-            disabled={loading}
-            activeOpacity={0.85}
+          <ScrollView
+            contentContainerStyle={{ padding: SPACING.xl, paddingTop: SPACING.xxxl, gap: SPACING.md, paddingBottom: 60 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <Ionicons name="checkmark-circle-outline" size={22} color={COLORS.white} />
-            <Text style={styles.boutonSauvegarderTexte}>
-              {loading ? 'Sauvegarde...' : produitEdit ? 'Mettre à jour' : 'Ajouter le produit'}
-            </Text>
-          </TouchableOpacity>
-        </ScrollView>
+            <View style={styles.modalEntete}>
+              <Text style={styles.modalTitre}>
+                {produitEdit ? 'Modifier le produit' : 'Nouveau produit'}
+              </Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <Ionicons name="close" size={28} color={COLORS.text} />
+              </TouchableOpacity>
+            </View>
+
+            <ChampModal
+              label="Nom du produit"
+              placeholder="Ex: Riz basmati 5kg"
+              icone="cube-outline"
+              value={form.nom}
+              onChangeText={(v) => setForm({ ...form, nom: v })}
+              erreur={erreurs.nom}
+              returnKeyType="next"
+            />
+            <ChampModal
+              label="Prix d'achat (FCFA) — optionnel"
+              placeholder="Ex: 8000 — ce que vous avez payé"
+              icone="arrow-down-circle-outline"
+              value={form.prixAchat}
+              onChangeText={(v) => setForm({ ...form, prixAchat: v })}
+              keyboardType="numeric"
+              erreur={erreurs.prixAchat}
+              returnKeyType="next"
+            />
+            <ChampModal
+              label="Prix de vente (FCFA)"
+              placeholder="Ex: 10000 — ce que le client paye"
+              icone="arrow-up-circle-outline"
+              value={form.prixVente}
+              onChangeText={(v) => setForm({ ...form, prixVente: v })}
+              keyboardType="numeric"
+              erreur={erreurs.prixVente}
+              returnKeyType="next"
+            />
+
+            {form.prixAchat && form.prixVente && Number(form.prixVente) > Number(form.prixAchat) && (
+              <View style={styles.beneficeApercu}>
+                <Ionicons name="trending-up-outline" size={20} color={COLORS.success} />
+                <Text style={styles.beneficeApercuTexte}>
+                  Bénéfice par unité : {formatMontant(Number(form.prixVente) - Number(form.prixAchat))}
+                </Text>
+              </View>
+            )}
+
+            <ChampModal
+              label="Quantité en stock"
+              placeholder="Ex: 50"
+              icone="layers-outline"
+              value={form.stock}
+              onChangeText={(v) => setForm({ ...form, stock: v })}
+              keyboardType="numeric"
+              erreur={erreurs.stock}
+              returnKeyType="done"
+              onSubmitEditing={sauvegarder}
+            />
+
+            <TouchableOpacity
+              style={[styles.boutonSauvegarder, loading && { opacity: 0.7 }]}
+              onPress={sauvegarder}
+              disabled={loading}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="checkmark-circle-outline" size={22} color={COLORS.white} />
+              <Text style={styles.boutonSauvegarderTexte}>
+                {loading ? 'Sauvegarde...' : produitEdit ? 'Mettre à jour' : 'Ajouter le produit'}
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* MODAL RÉAPPROVISIONNEMENT */}
       <Modal visible={modalReappro} animationType="slide" presentationStyle="pageSheet">
-        <View style={{ flex: 1, backgroundColor: COLORS.background, padding: SPACING.xl, paddingTop: SPACING.xxxl }}>
-          <View style={styles.modalEntete}>
-            <Text style={styles.modalTitre}>Réapprovisionner</Text>
-            <TouchableOpacity onPress={() => setModalReappro(false)}>
-              <Ionicons name="close" size={28} color={COLORS.text} />
-            </TouchableOpacity>
-          </View>
-
-          {produitReappro && (
-            <View style={styles.reapproInfo}>
-              <View style={styles.produitAvatar}>
-                <Text style={styles.produitAvatarTexte}>
-                  {produitReappro.nom.charAt(0).toUpperCase()}
-                </Text>
-              </View>
-              <View>
-                <Text style={styles.reapproNom}>{produitReappro.nom}</Text>
-                <Text style={styles.reapproStock}>
-                  Stock actuel : <Text style={{ fontWeight: '800', color: COLORS.primary }}>{produitReappro.stock} unités</Text>
-                </Text>
-              </View>
-            </View>
-          )}
-
-          <Text style={styles.champLabel}>Combien d'unités avez-vous reçu ?</Text>
-          <View style={styles.champWrapper}>
-            <Ionicons name="add-circle-outline" size={18} color={COLORS.textSecondary} style={{ paddingHorizontal: SPACING.md }} />
-            <TextInput
-              style={styles.champInput}
-              placeholder="Ex: 20"
-              value={quantiteReappro}
-              onChangeText={setQuantiteReappro}
-              keyboardType="numeric"
-              placeholderTextColor={COLORS.textLight}
-              autoFocus
-            />
-          </View>
-
-          {quantiteReappro && !isNaN(quantiteReappro) && Number(quantiteReappro) > 0 && produitReappro && (
-            <View style={styles.reapproApercu}>
-              <Ionicons name="trending-up-outline" size={20} color={COLORS.success} />
-              <Text style={styles.reapproApercuTexte}>
-                Nouveau stock : {produitReappro.stock + Number(quantiteReappro)} unités
-              </Text>
-            </View>
-          )}
-
-          <TouchableOpacity
-            style={[styles.boutonSauvegarder, { marginTop: SPACING.xl }, loading && { opacity: 0.7 }]}
-            onPress={confirmerReappro}
-            disabled={loading}
-            activeOpacity={0.85}
+        <KeyboardAvoidingView
+          style={{ flex: 1, backgroundColor: COLORS.background }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
+        >
+          <ScrollView
+            contentContainerStyle={{ padding: SPACING.xl, paddingTop: SPACING.xxxl, paddingBottom: 60 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <Ionicons name="checkmark-circle-outline" size={22} color={COLORS.white} />
-            <Text style={styles.boutonSauvegarderTexte}>
-              {loading ? 'Mise à jour...' : 'Confirmer le réapprovisionnement'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+            <View style={styles.modalEntete}>
+              <Text style={styles.modalTitre}>Réapprovisionner</Text>
+              <TouchableOpacity onPress={() => setModalReappro(false)}>
+                <Ionicons name="close" size={28} color={COLORS.text} />
+              </TouchableOpacity>
+            </View>
+
+            {produitReappro && (
+              <View style={styles.reapproInfo}>
+                <View style={styles.produitAvatar}>
+                  <Text style={styles.produitAvatarTexte}>{produitReappro.nom.charAt(0).toUpperCase()}</Text>
+                </View>
+                <View>
+                  <Text style={styles.reapproNom}>{produitReappro.nom}</Text>
+                  <Text style={styles.reapproStock}>
+                    Stock actuel : <Text style={{ fontWeight: '800', color: COLORS.primary }}>{produitReappro.stock} unités</Text>
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            <Text style={styles.champLabel}>Combien d'unités avez-vous reçu ?</Text>
+            <View style={styles.champWrapper}>
+              <Ionicons name="add-circle-outline" size={18} color={COLORS.textSecondary} style={{ paddingHorizontal: SPACING.md }} />
+              <TextInput
+                style={styles.champInput}
+                placeholder="Ex: 20"
+                value={quantiteReappro}
+                onChangeText={setQuantiteReappro}
+                keyboardType="numeric"
+                placeholderTextColor={COLORS.textLight}
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={confirmerReappro}
+              />
+            </View>
+
+            {quantiteReappro && !isNaN(quantiteReappro) && Number(quantiteReappro) > 0 && produitReappro && (
+              <View style={styles.reapproApercu}>
+                <Ionicons name="trending-up-outline" size={20} color={COLORS.success} />
+                <Text style={styles.reapproApercuTexte}>
+                  Nouveau stock : {produitReappro.stock + Number(quantiteReappro)} unités
+                </Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={[styles.boutonSauvegarder, { marginTop: SPACING.xl }, loading && { opacity: 0.7 }]}
+              onPress={confirmerReappro}
+              disabled={loading}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="checkmark-circle-outline" size={22} color={COLORS.white} />
+              <Text style={styles.boutonSauvegarderTexte}>
+                {loading ? 'Mise à jour...' : 'Confirmer le réapprovisionnement'}
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

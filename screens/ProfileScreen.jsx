@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, Alert,
-  ScrollView, TextInput, Modal,
+  ScrollView, TextInput, Modal, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -77,6 +77,7 @@ const ProfileScreen = ({ navigation }) => {
       style={[styles.container, { paddingTop: insets.top }]}
       contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
       showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
     >
       {/* EN-TÊTE PROFIL */}
       <View style={styles.entete}>
@@ -120,30 +121,21 @@ const ProfileScreen = ({ navigation }) => {
       <View style={styles.section}>
         <Text style={styles.sectionTitre}>Paramètres</Text>
         <View style={styles.carte}>
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => navigation.navigate('Notifications')}
-          >
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Notifications')}>
             <View style={[styles.menuIcone, { backgroundColor: `${COLORS.primary}15` }]}>
               <Ionicons name="notifications-outline" size={20} color={COLORS.primary} />
             </View>
             <Text style={styles.menuTexte}>Notifications</Text>
             <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => navigation.navigate('Aide')}
-          >
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Aide')}>
             <View style={[styles.menuIcone, { backgroundColor: `${COLORS.nita}15` }]}>
               <Ionicons name="help-circle-outline" size={20} color={COLORS.nita} />
             </View>
             <Text style={styles.menuTexte}>Aide & Support</Text>
             <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.menuItem, { borderBottomWidth: 0 }]}
-            onPress={() => navigation.navigate('Confidentialite')}
-          >
+          <TouchableOpacity style={[styles.menuItem, { borderBottomWidth: 0 }]} onPress={() => navigation.navigate('Confidentialite')}>
             <View style={[styles.menuIcone, { backgroundColor: `${COLORS.secondary}15` }]}>
               <Ionicons name="shield-checkmark-outline" size={20} color={COLORS.secondary} />
             </View>
@@ -172,53 +164,63 @@ const ProfileScreen = ({ navigation }) => {
 
       {/* MODAL MODIFIER */}
       <Modal visible={modalVisible} animationType="slide" presentationStyle="pageSheet">
-        <ScrollView
+        <KeyboardAvoidingView
           style={{ flex: 1, backgroundColor: COLORS.background }}
-          contentContainerStyle={{ padding: SPACING.xl, paddingTop: SPACING.xxxl, gap: SPACING.md }}
-          keyboardShouldPersistTaps="handled"
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
         >
-          <View style={styles.modalEntete}>
-            <Text style={styles.modalTitre}>Modifier le profil</Text>
-            <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Ionicons name="close" size={28} color={COLORS.text} />
-            </TouchableOpacity>
-          </View>
-
-          <ChampModal
-            label="Votre nom"
-            placeholder="Ex: Moussa Mahamane"
-            icone="person-outline"
-            value={form.nom}
-            onChangeText={(v) => setForm({ ...form, nom: v })}
-          />
-          <ChampModal
-            label="Nom de la boutique"
-            placeholder="Ex: Boutique Al Baraka"
-            icone="storefront-outline"
-            value={form.boutique}
-            onChangeText={(v) => setForm({ ...form, boutique: v })}
-          />
-          <ChampModal
-            label="Téléphone"
-            placeholder="Ex: 90123456"
-            icone="call-outline"
-            value={form.telephone}
-            onChangeText={(v) => setForm({ ...form, telephone: v })}
-            keyboardType="phone-pad"
-          />
-
-          <TouchableOpacity
-            style={[styles.boutonSauvegarder, loading && { opacity: 0.7 }]}
-            onPress={sauvegarderProfil}
-            disabled={loading}
-            activeOpacity={0.85}
+          <ScrollView
+            contentContainerStyle={{ padding: SPACING.xl, paddingTop: SPACING.xxxl, gap: SPACING.md, paddingBottom: 60 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <Ionicons name="checkmark-circle-outline" size={22} color={COLORS.white} />
-            <Text style={styles.boutonSauvegarderTexte}>
-              {loading ? 'Sauvegarde...' : 'Sauvegarder'}
-            </Text>
-          </TouchableOpacity>
-        </ScrollView>
+            <View style={styles.modalEntete}>
+              <Text style={styles.modalTitre}>Modifier le profil</Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <Ionicons name="close" size={28} color={COLORS.text} />
+              </TouchableOpacity>
+            </View>
+
+            <ChampModal
+              label="Votre nom"
+              placeholder="Ex: Moussa Mahamane"
+              icone="person-outline"
+              value={form.nom}
+              onChangeText={(v) => setForm({ ...form, nom: v })}
+              returnKeyType="next"
+            />
+            <ChampModal
+              label="Nom de la boutique"
+              placeholder="Ex: Boutique Al Baraka"
+              icone="storefront-outline"
+              value={form.boutique}
+              onChangeText={(v) => setForm({ ...form, boutique: v })}
+              returnKeyType="next"
+            />
+            <ChampModal
+              label="Téléphone"
+              placeholder="Ex: 90123456"
+              icone="call-outline"
+              value={form.telephone}
+              onChangeText={(v) => setForm({ ...form, telephone: v })}
+              keyboardType="phone-pad"
+              returnKeyType="done"
+              onSubmitEditing={sauvegarderProfil}
+            />
+
+            <TouchableOpacity
+              style={[styles.boutonSauvegarder, loading && { opacity: 0.7 }]}
+              onPress={sauvegarderProfil}
+              disabled={loading}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="checkmark-circle-outline" size={22} color={COLORS.white} />
+              <Text style={styles.boutonSauvegarderTexte}>
+                {loading ? 'Sauvegarde...' : 'Sauvegarder'}
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Modal>
     </ScrollView>
   );

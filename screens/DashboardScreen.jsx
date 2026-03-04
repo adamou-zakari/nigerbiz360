@@ -6,16 +6,22 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { getStatsJour } from '../services/ventesService';
-import { getProduitsStockFaible } from '../services/productService';
+import { getProduitsStockFaible, observerProduits } from '../services/productService';
 import useStore from '../store/useStore';
 import { formatMontant, formatDate } from '../utils/helpers';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../utils/theme';
 
 const DashboardScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const { user, profil, produits, statsJour, setStatsJour } = useStore();
+  const { user, profil, produits, setProduits, statsJour, setStatsJour } = useStore();
   const [alertesStock, setAlertesStock] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    if (!user?.uid) return;
+    const unsubscribe = observerProduits(user.uid, setProduits);
+    return () => unsubscribe();
+  }, [user?.uid]);
 
   const chargerStats = useCallback(async () => {
     if (!user?.uid) return;
@@ -28,6 +34,11 @@ const DashboardScreen = ({ navigation }) => {
   }, [user?.uid]);
 
   useEffect(() => { chargerStats(); }, [chargerStats]);
+
+  useEffect(() => {
+    if (!user?.uid || produits.length === 0) return;
+    getProduitsStockFaible(user.uid).then(setAlertesStock);
+  }, [produits]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -79,25 +90,34 @@ const DashboardScreen = ({ navigation }) => {
 
       {/* RÉSUMÉ STOCK */}
       <View style={styles.resumeGrid}>
-        <View style={styles.resumeCarte}>
+        <TouchableOpacity
+          style={styles.resumeCarte}
+          onPress={() => navigation.navigate('MainTabs', { screen: 'Produits' })}
+        >
           <Ionicons name="cube-outline" size={22} color={COLORS.secondary} />
           <Text style={styles.resumeValeur}>{produits.length}</Text>
           <Text style={styles.resumeLabel}>Produits</Text>
-        </View>
-        <View style={styles.resumeCarte}>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.resumeCarte}
+          onPress={() => navigation.navigate('MainTabs', { screen: 'Produits' })}
+        >
           <Ionicons name="layers-outline" size={22} color={COLORS.primary} />
           <Text style={styles.resumeValeur}>
             {produits.reduce((s, p) => s + p.stock, 0)}
           </Text>
           <Text style={styles.resumeLabel}>Total stock</Text>
-        </View>
-        <View style={styles.resumeCarte}>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.resumeCarte}
+          onPress={() => navigation.navigate('Notifications')}
+        >
           <Ionicons name="warning-outline" size={22} color={COLORS.error} />
           <Text style={[styles.resumeValeur, alertesStock.length > 0 && { color: COLORS.error }]}>
             {alertesStock.length}
           </Text>
           <Text style={styles.resumeLabel}>Stock faible</Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* ALERTES STOCK FAIBLE */}
@@ -117,7 +137,7 @@ const DashboardScreen = ({ navigation }) => {
                     borderBottomWidth: 1, borderBottomColor: COLORS.border,
                   },
                 ]}
-                onPress={() => navigation.navigate('Produits')}
+                onPress={() => navigation.navigate('MainTabs', { screen: 'Produits' })}
               >
                 <View style={styles.alerteIcone}>
                   <Ionicons name="cube-outline" size={20} color={COLORS.error} />

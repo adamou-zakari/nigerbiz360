@@ -55,14 +55,14 @@ const LoginScreen = ({ navigation }) => {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1, backgroundColor: COLORS.background }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
       <ScrollView
-        style={styles.container}
         contentContainerStyle={[styles.content, {
           paddingTop: insets.top + 40,
-          paddingBottom: insets.bottom + 20,
+          paddingBottom: insets.bottom + 40,
         }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -81,7 +81,6 @@ const LoginScreen = ({ navigation }) => {
 
         {/* CARTE */}
         <View style={styles.carte}>
-
           {/* ONGLETS */}
           <View style={styles.onglets}>
             <TouchableOpacity
@@ -113,6 +112,7 @@ const LoginScreen = ({ navigation }) => {
                   value={form.nom}
                   onChangeText={(v) => updateForm('nom', v)}
                   erreur={erreurs.nom}
+                  returnKeyType="next"
                 />
                 <Champ
                   label="Nom de votre boutique"
@@ -121,6 +121,7 @@ const LoginScreen = ({ navigation }) => {
                   value={form.boutique}
                   onChangeText={(v) => updateForm('boutique', v)}
                   erreur={erreurs.boutique}
+                  returnKeyType="next"
                 />
                 <Champ
                   label="Téléphone (optionnel)"
@@ -129,6 +130,7 @@ const LoginScreen = ({ navigation }) => {
                   value={form.telephone}
                   onChangeText={(v) => updateForm('telephone', v)}
                   keyboardType="phone-pad"
+                  returnKeyType="next"
                 />
               </>
             )}
@@ -142,6 +144,7 @@ const LoginScreen = ({ navigation }) => {
               keyboardType="email-address"
               autoCapitalize="none"
               erreur={erreurs.email}
+              returnKeyType="next"
             />
 
             <Champ
@@ -152,6 +155,8 @@ const LoginScreen = ({ navigation }) => {
               onChangeText={(v) => updateForm('motDePasse', v)}
               secureTextEntry={!showPassword}
               erreur={erreurs.motDePasse}
+              returnKeyType="done"
+              onSubmitEditing={handleSoumettre}
               suffixe={
                 <TouchableOpacity
                   onPress={() => setShowPassword(!showPassword)}
@@ -190,7 +195,6 @@ const LoginScreen = ({ navigation }) => {
             )}
           </TouchableOpacity>
 
-          {/* NOTE GRATUIT */}
           {mode === 'inscription' && (
             <View style={styles.noteGratuite}>
               <Ionicons name="checkmark-circle-outline" size={16} color={COLORS.secondary} />
@@ -223,7 +227,6 @@ const Champ = ({ label, icone, erreur, suffixe, ...props }) => (
 );
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
   content: { paddingHorizontal: SPACING.xl },
   logoZone: { alignItems: 'center', marginBottom: SPACING.xxxl },
   logoCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.md, ...SHADOWS.medium },
